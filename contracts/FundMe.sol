@@ -16,9 +16,9 @@ contract FundMe{
 
     mapping(address => uint256) public fundertoAmount;
 
-    uint256 constant MINIUM_VALUE = 1 * 10 ** 18; //因为是wei做单位 这里代表1 USD
+    uint256 constant MINIUM_VALUE = 100 * 10 ** 18; //因为是wei做单位 这里代表1 USD
 
-    uint256 constant TARGET = 1 * 10 **18;
+    uint256 constant TARGET = 1000 * 10 **18;
 
     address public owner;
 
@@ -30,13 +30,17 @@ contract FundMe{
 
     bool public getFundSuccess = false;
 
+    event FundWithdrawByOwner(uint256);
+
+    event RefundByFunder(address, uint256);
+
     //如果以USD为单位 如何换算呢？引入预言机 把offchain 和onchain 链接起来
-    AggregatorV3Interface internal dataFeed;
+    AggregatorV3Interface public dataFeed;
 
     //构造函数 获取最新的美元与ETH的价格关系的地址
-    constructor(uint256 _lockTime) {
+    constructor(uint256 _lockTime, address dataFeedAddr) {
         dataFeed = AggregatorV3Interface(
-            0x694AA1769357215DE4FAC081bf1f309aDC325306
+            dataFeedAddr
         );
 
         owner = msg.sender;
@@ -76,14 +80,17 @@ contract FundMe{
         require(msg.sender == owner,"you are not the owner to get fund");
 
         bool success;
+        uint256 balance = address(this).balance;
         //call函数 transfer ETH with data
-        (success,) = payable(msg.sender).call{value: address(this).balance}("");
+        (success, ) = payable(msg.sender).call{value: balance}("");
     //   (bool,result) = addr.call{value: }("")
         require(success, "transfer transaction is failed");
         fundertoAmount[msg.sender] = 0;
 
         getFundSuccess = true;
 
+        // emit event
+        emit FundWithdrawByOwner(balance);
 
     }
 
@@ -93,9 +100,12 @@ contract FundMe{
         require(fundertoAmount[msg.sender] != 0, "there is no fund for you");
 
         bool success;
+        uint256 balanceOfAmount = fundertoAmount[msg.sender];
         (success,) = payable(msg.sender).call{value: fundertoAmount[msg.sender]}("");
         require(success, "transfer transaction is failed");
         fundertoAmount[msg.sender] = 0;
+
+        emit RefundByFunder(msg.sender,balanceOfAmount);
 
     }
 

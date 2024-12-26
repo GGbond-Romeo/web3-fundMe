@@ -1,6 +1,10 @@
 require("@nomicfoundation/hardhat-toolbox");
 require("@chainlink/env-enc").config()
 require("./tasks")
+require("hardhat-deploy")
+require("@nomicfoundation/hardhat-ethers");
+require("hardhat-deploy-ethers");
+
 
 //get .env file variable
 const SEPOLIA_URL = process.env.SEPOLIA_URL
@@ -11,6 +15,7 @@ const PRIVATE_KEY_1 = process.env.PRIVATE_KEY_1
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: "0.8.28",
+  defaultNetwork: "hardhat",
   networks: {
     sepolia: {
       url: SEPOLIA_URL, //alchemy third tool
@@ -22,5 +27,14 @@ module.exports = {
     apiKey: {
       sepolia: ETHERSCAN_API_KEY
     }
+  },
+  namedAccounts: {
+    firstAccount: {
+      default: 0
+    },
+    secondAccount: {
+      default: 1
+    }
   }
+
 }
